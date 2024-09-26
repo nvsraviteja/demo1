@@ -11,8 +11,8 @@ USERNAMES=("user1" "user2" "user3")
 # Output CSV file
 output_file="pull_requests.csv"
 
-# Write CSV header
-echo "PR Number,Title,Author,URL,Status" > "$output_file"
+# Write CSV header (include Created Date)
+echo "PR Number,Title,Author,URL,Status,Created Date" > "$output_file"
 
 # Fetch the last 100 PRs
 echo "Fetching the last 100 pull requests..."
@@ -42,9 +42,10 @@ for pr_number in $(echo "$prs" | grep '"number":' | awk '{print $2}' | sed 's/,/
             fi
         done
 
-        # Extract the PR title and URL
+        # Extract the PR title, URL, and created_at (created date)
         pr_title=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"title":' | awk -F '"' '{print $4}')
         pr_url=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"html_url":' | awk -F '"' '{print $4}')
+        pr_created=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"created_at":' | awk -F '"' '{print $4}')
 
         # Determine approval status
         if [[ "$approved" == true ]]; then
@@ -53,8 +54,8 @@ for pr_number in $(echo "$prs" | grep '"number":' | awk '{print $2}' | sed 's/,/
             status="Not Approved"
         fi
 
-        # Write the PR details into the CSV file
-        echo "$pr_number,\"$pr_title\",$pr_author,$pr_url,$status" >> "$output_file"
+        # Write the PR details (including Created Date) into the CSV file
+        echo "$pr_number,\"$pr_title\",$pr_author,$pr_url,$status,$pr_created" >> "$output_file"
     fi
 done
 
