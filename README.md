@@ -25,16 +25,27 @@ for pr_number in $(echo "$prs" | grep '"number":' | awk '{print $2}' | sed 's/,/
         reviews=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls/$pr_number/reviews")
 
-        # Check if the PR has any reviews
-        if echo "$reviews" | grep -q '"id":'; then
-            # Extract the PR title and URL
-            pr_title=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"title":' | awk -F '"' '{print $4}')
-            pr_url=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"html_url":' | awk -F '"' '{print $4}')
+        # Initialize a variable to track approval status
+        approved=false
 
-            # Print the PR details if it matches the usernames
+        # Loop through the reviews and check for approval status
+        for state in $(echo "$reviews" | grep '"state":' | awk -F '"' '{print $4}'); do
+            if [[ "$state" == "APPROVED" ]]; then
+                approved=true
+                break
+            fi
+        done
+
+        # Extract the PR title and URL
+        pr_title=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"title":' | awk -F '"' '{print $4}')
+        pr_url=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"html_url":' | awk -F '"' '{print $4}')
+
+        # If the PR is not approved, or has no reviews, display it
+        if [[ "$approved" == false ]]; then
             echo "PR #$pr_number: $pr_title"
             echo "Author: $pr_author"
             echo "URL: $pr_url"
+            echo "Status: Not Approved"
             echo ""
         fi
     fi
