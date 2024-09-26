@@ -8,6 +8,12 @@ GITHUB_TOKEN="your-github-token"
 # List of usernames to filter by (teammates)
 USERNAMES=("user1" "user2" "user3")
 
+# Output CSV file
+output_file="pull_requests.csv"
+
+# Write CSV header
+echo "PR Number,Title,Author,URL,Status" > "$output_file"
+
 # Fetch the last 100 PRs
 echo "Fetching the last 100 pull requests..."
 prs=$(curl -s -H "Authorization: token $GITHUB_TOKEN" \
@@ -40,15 +46,16 @@ for pr_number in $(echo "$prs" | grep '"number":' | awk '{print $2}' | sed 's/,/
         pr_title=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"title":' | awk -F '"' '{print $4}')
         pr_url=$(echo "$prs" | grep -A 10 "\"number\": $pr_number" | grep '"html_url":' | awk -F '"' '{print $4}')
 
-        # If the PR is not approved, or has no reviews, display it
-        if [[ "$approved" == false ]]; then
-            echo "PR #$pr_number: $pr_title"
-            echo "Author: $pr_author"
-            echo "URL: $pr_url"
-            echo "Status: Not Approved"
-            echo ""
+        # Determine approval status
+        if [[ "$approved" == true ]]; then
+            status="Approved"
+        else
+            status="Not Approved"
         fi
+
+        # Write the PR details into the CSV file
+        echo "$pr_number,\"$pr_title\",$pr_author,$pr_url,$status" >> "$output_file"
     fi
 done
 
-echo "Finished processing filtered pull requests."
+echo "Finished processing pull requests and saved to $output_file."
